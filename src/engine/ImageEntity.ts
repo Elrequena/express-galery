@@ -44,9 +44,9 @@ export class ImageEntity {
     this.fadeOut = Math.min(2, lifetime * 0.25)
   }
 
-  /** Advances by dt seconds. Returns false once the entity is finished. */
-  update(dt: number): boolean {
-    this.age += dt
+  /** Advances by dt seconds (ageRate speeds up only its lifecycle, not its motion). Returns false once the entity is finished. */
+  update(dt: number, ageRate = 1): boolean {
+    this.age += dt * ageRate // ageRate > 1 makes it fade out sooner
     this.sprite.x += this.vx * dt
     this.sprite.y += this.vy * dt
     const left = this.lifetime - this.age

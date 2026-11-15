@@ -2,7 +2,7 @@ import { Application, Container } from 'pixijs'
 import type { MediaProvider } from '../media/types.ts'
 import { ImageEntity } from './ImageEntity.ts'
 
-const TARGET_ACTIVE = 8
+const RETIRE_BOOST = 3 // lifecycle speed-up for surplus images
 
 export class AnimationEngine {
   private app: Application
@@ -15,6 +15,9 @@ export class AnimationEngine {
   private run = 0 // invalidates in-flight spawns on stop
 
   displayTime = 8 // seconds
+  density = 8 // desired simultaneous images
+  private effective = 8 // density smoothed over time
+  private boost = 1
 
   private media: MediaProvider
 
@@ -35,6 +38,8 @@ export class AnimationEngine {
     if (this.running) return
     this.running = true
     this.paused = false
+    this.effective = this.density
+    this.boost = 1
     this.spawnTimer = 0 // spawn the first one immediately
   }
 
@@ -59,16 +64,25 @@ export class AnimationEngine {
     if (!this.running || this.paused) return
     dt = Math.min(dt, 0.1)
 
+    // Ease the effective density towards the requested one (~2 s time constant).
+    this.effective += (this.density - this.effective) * (1 - Math.exp(-dt / 2))
+    // Surplus images (oldest first) fade out faster, with a smoothed ramp.
+    const surplus = this.entities.length - this.effective
+    const boostGoal = surplus > 0.5 ? RETIRE_BOOST : 1
+    this.boost += (boostGoal - this.boost) * (1 - Math.exp(-dt))
+    const boosted = surplus > 0.5 ? Math.ceil(surplus) : 0
+
     for (let i = this.entities.length - 1; i >= 0; i--) {
-      if (!this.entities[i].update(dt)) {
+      if (!this.entities[i].update(dt, i < boosted ? this.boost : 1)) {
         this.entities[i].destroy()
         this.entities.splice(i, 1)
       }
     }
 
     this.spawnTimer -= dt
-    if (this.spawnTimer <= 0 && this.entities.length + this.pending < TARGET_ACTIVE) {
-      this.spawnTimer = (this.displayTime / TARGET_ACTIVE) * (0.6 + Math.random() * 0.8)
+    const target = Math.max(1, Math.round(this.effective))
+    if (this.spawnTimer <= 0 && this.entities.length + this.pending < target) {
+      this.spawnTimer = (this.displayTime / target) * (0.6 + Math.random() * 0.8)
       void this.spawn()
     }
   }

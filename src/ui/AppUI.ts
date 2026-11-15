@@ -15,6 +15,7 @@ export class AppUI {
   private info = el('span', { class: 'info' })
   private slider = el('input', { type: 'range', min: '2', max: '30', step: '1', value: '8' }) as HTMLInputElement
   private secs = el('span', { class: 'secs' }, '8 s')
+  private count = el('input', { type: 'number', min: '1', max: '40', step: '1', value: '8' }) as HTMLInputElement
   private play = el('button', { class: 'btn primary' }, 'Iniciar') as HTMLButtonElement
   private stop = el('button', { class: 'btn' }, 'Detener') as HTMLButtonElement
   private empty = el('div', { class: 'empty' })
@@ -26,9 +27,12 @@ export class AppUI {
     const stage = el('div', { class: 'stage' })
     const bar = el('div', { class: 'bar' })
     const time = el('label', { class: 'time' }, 'Tiempo ', this.slider, this.secs)
+    const minus = el('button', { class: 'step', type: 'button', 'aria-label': 'Menos' }, '−')
+    const plus = el('button', { class: 'step', type: 'button', 'aria-label': 'Más' }, '+')
+    const dens = el('div', { class: 'time' }, 'Cantidad', el('span', { class: 'stepper' }, minus, this.count, plus))
     const pin = el('input', { type: 'checkbox' }) as HTMLInputElement
     const fix = el('label', { class: 'switch' }, pin, el('span', { class: 'track' }), 'Fijar')
-    bar.append(this.pick, this.info, time, this.play, this.stop, fix)
+    bar.append(this.pick, this.info, time, dens, this.play, this.stop, fix)
     const dock = (this.dock = el('div', { class: 'dock' }, bar))
     root.append(stage, this.empty, dock, this.input)
 
@@ -48,6 +52,14 @@ export class AppUI {
       this.engine.displayTime = Number(this.slider.value)
       this.secs.textContent = `${this.slider.value} s`
     }
+    const setCount = (n: number) => {
+      const v = Math.min(40, Math.max(1, Math.round(n) || 8))
+      this.count.value = String(v)
+      this.engine.density = v
+    }
+    this.count.onchange = () => setCount(Number(this.count.value))
+    minus.onclick = () => setCount(Number(this.count.value) - 1)
+    plus.onclick = () => setCount(Number(this.count.value) + 1)
     this.play.onclick = () => this.onPlay()
     this.stop.onclick = () => {
       this.engine.stop()

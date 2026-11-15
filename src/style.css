@@ -49,3 +49,17 @@ body {
 .time { display: flex; align-items: center; gap: 8px; }
 .secs { min-width: 3em; font-variant-numeric: tabular-nums; }
 input[type='range'] { width: 120px; accent-color: #e8e8ee; }
+input[type='number'] {
+  width: 36px; font: inherit; color: inherit; text-align: center;
+  background: none; border: 0; padding: 0; appearance: textfield; -moz-appearance: textfield;
+}
+input[type='number']::-webkit-inner-spin-button,
+input[type='number']::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+.stepper {
+  display: flex; align-items: center; background: rgba(255, 255, 255, 0.08); border-radius: 999px;
+}
+.step {
+  font: inherit; font-size: 16px; line-height: 1; color: #e8e8ee; cursor: pointer;
+  width: 28px; height: 28px; border: 0; border-radius: 50%; background: none;
+}
+.step:hover { background: rgba(255, 255, 255, 0.16); }
