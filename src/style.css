@@ -18,6 +18,8 @@ body {
   opacity: 0; transition: opacity 0.4s;
 }
 .dock:hover, .dock:has(:focus-visible),.dock.pinned, .dock.shown, .dock.always { opacity: 1; }
+.empty h1 { margin: 0 0 8px; font-size: 28px; font-weight: 600; letter-spacing: 0.02em; color: #e8e8ee; }
+.empty p { margin: 0; }
 .bar {
   display: flex; align-items: center; gap: 12px; flex-wrap: wrap; justify-content: center;
   padding: 8px 12px; max-width: 100%;

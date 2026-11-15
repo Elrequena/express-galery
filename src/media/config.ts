@@ -23,6 +23,6 @@ export const videoConfig = {
 
 export const densityConfig = {
   min: 5,
-  max: 40,
-  default: 8,
+  max: 50,
+  default: 10,
 }

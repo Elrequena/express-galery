@@ -15,7 +15,7 @@ export class AnimationEngine {
   private spawnTimer = 0
   private run = 0 // invalidates in-flight spawns on stop
 
-  displayTime = 8 // seconds
+  displayTime = 10 // seconds
   density: number = densityConfig.default // desired simultaneous elements (min densityConfig.min)
   private effective: number = densityConfig.default // density smoothed over time
   private boost = 1

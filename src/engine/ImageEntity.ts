@@ -6,6 +6,8 @@ export interface Bounds {
   height: number
 }
 
+const CENTRE_BIAS = 0.65 // chance that an image starts moving towards the centre
+
 const rand = (a: number, b: number) => a + Math.random() * (b - a)
 
 /** One active image: its sprite, motion and independent lifecycle. */
@@ -32,13 +34,20 @@ export class ImageEntity {
     this.sprite.scale.set(scale)
     this.sprite.alpha = 0
 
-    const speed = rand(12, 70) // px/s
-    const sign = Math.random() < 0.5 ? -1 : 1
-    if (Math.random() < 0.6) this.vx = sign * speed
-    else this.vy = sign * speed
+    // Positions favour the centre (average of two uniforms = triangular distribution).
+    const centred = (u: number) => 0.5 + (rand(-1, 1) + rand(-1, 1)) * 0.25 * u
+    this.sprite.x = centred(0.9) * bounds.width
+    this.sprite.y = centred(0.9) * bounds.height
 
-    this.sprite.x = rand(0.05, 0.95) * bounds.width
-    this.sprite.y = rand(0.05, 0.95) * bounds.height
+    // Movement leans towards the centre so images cross it instead of drifting to the edges.
+    const speed = rand(12, 70) // px/s
+    const horizontal = Math.random() < 0.6
+    const towardCentre = Math.random() < CENTRE_BIAS
+    const offset = horizontal ? this.sprite.x - bounds.width / 2 : this.sprite.y - bounds.height / 2
+    const away = offset >= 0 ? 1 : -1
+    const sign = towardCentre ? -away : away
+    if (horizontal) this.vx = sign * speed
+    else this.vy = sign * speed
 
     this.fadeIn = Math.min(1.5, lifetime * 0.2)
     this.fadeOut = Math.min(2, lifetime * 0.25)

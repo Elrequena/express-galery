@@ -14,8 +14,8 @@ export class AppUI {
   private input = el('input', { type: 'file', hidden: '' }) as HTMLInputElement
   private pick = el('button', { class: 'btn' }, 'Elegir carpeta') as HTMLButtonElement
   private info = el('span', { class: 'info' })
-  private slider = el('input', { type: 'range', min: '2', max: '30', step: '1', value: '8' }) as HTMLInputElement
-  private secs = el('span', { class: 'secs' }, '8 s')
+  private slider = el('input', { type: 'range', min: '2', max: '30', step: '1', value: '10' }) as HTMLInputElement
+  private secs = el('span', { class: 'secs' }, '10 s')
   private count = el('input', { type: 'number', min: String(densityConfig.min), max: String(densityConfig.max), step: '1', value: String(densityConfig.default) }) as HTMLInputElement
   private play = el('button', { class: 'btn primary' }, 'Iniciar') as HTMLButtonElement
   private stop = el('button', { class: 'btn' }, 'Detener') as HTMLButtonElement
@@ -110,7 +110,7 @@ export class AppUI {
     if (!this.searched) msg = 'Elige una carpeta con imágenes (JPG, PNG, WEBP, GIF) o videos (MP4, WEBM, MOV) para empezar.'
     else if (n === 0) msg = 'No se encontraron imágenes ni videos compatibles en esa carpeta.'
     else if (this.state === 'idle') msg = 'Pulsa «Iniciar» para crear la composición.'
-    this.empty.textContent = msg
+    this.empty.replaceChildren(el('div', {}, el('h1', {}, 'Express Galery'), el('p', {}, msg)))
     this.empty.style.display = msg ? '' : 'none'
   }
 }
