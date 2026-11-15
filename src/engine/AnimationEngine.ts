@@ -1,12 +1,12 @@
 import { Application, Container } from 'pixijs'
 import type { MediaProvider } from '../media/types.ts'
-import { densityConfig, videoConfig } from '../media/config.ts'
+import { densityConfig, sizeConfig, videoConfig } from '../media/config.ts'
 import { ImageEntity } from './ImageEntity.ts'
 
 const RETIRE_BOOST = 3 // lifecycle speed-up for surplus images
 
 export class AnimationEngine {
-  private app: Application
+  private app!: Application
   private layer = new Container()
   private entities: ImageEntity[] = []
   private running = false
@@ -17,22 +17,69 @@ export class AnimationEngine {
 
   displayTime = 10 // seconds
   density: number = densityConfig.default // desired simultaneous elements (min densityConfig.min)
+  sizeScale: number = sizeConfig.scales[sizeConfig.default] // applies to elements that appear from now on
   private effective: number = densityConfig.default // density smoothed over time
   private boost = 1
 
   private media: MediaProvider
+  private host: HTMLElement
+  private lostTimer = 0
+  private dprQuery: MediaQueryList | null = null
 
   constructor(host: HTMLElement, media: MediaProvider) {
+    this.host = host
     this.media = media
-    this.app = new Application({
+    this.app = this.createApp()
+    this.watchPixelRatio()
+  }
+
+  private pixelRatio() {
+    return Math.min(window.devicePixelRatio || 1, 2)
+  }
+
+  private createApp(): Application {
+    const app = new Application({
       resizeTo: window,
       backgroundAlpha: 0,
-      resolution: Math.min(window.devicePixelRatio || 1, 2),
+      resolution: this.pixelRatio(),
       autoDensity: true,
     })
-    host.appendChild(this.app.view as unknown as HTMLCanvasElement)
-    this.app.stage.addChild(this.layer)
-    this.app.ticker.add(() => this.tick(this.app.ticker.deltaMS / 1000))
+    const canvas = app.view as unknown as HTMLCanvasElement
+    this.host.appendChild(canvas)
+    app.stage.addChild(this.layer)
+    app.ticker.add(() => this.tick(app.ticker.deltaMS / 1000))
+    // Pixi re-uploads textures when the browser restores the GL context. If it does not
+    // (e.g. the window moved to a monitor on another GPU), rebuild the renderer.
+    canvas.addEventListener('webglcontextlost', () => {
+      clearTimeout(this.lostTimer)
+      this.lostTimer = window.setTimeout(() => this.rebuild(), 2500)
+    })
+    canvas.addEventListener('webglcontextrestored', () => {
+      clearTimeout(this.lostTimer)
+      app.resize()
+    })
+    return app
+  }
+
+  /** New renderer and canvas; the layer with the live sprites (and their textures) is kept. */
+  private rebuild() {
+    const old = this.app
+    old.stage.removeChild(this.layer)
+    old.destroy(true)
+    this.app = this.createApp()
+  }
+
+  /** The window may move to a monitor with another pixel density. */
+  private watchPixelRatio() {
+    this.dprQuery?.removeEventListener('change', this.onPixelRatio)
+    this.dprQuery = window.matchMedia(`(resolution: ${window.devicePixelRatio}dppx)`)
+    this.dprQuery.addEventListener('change', this.onPixelRatio)
+  }
+
+  private onPixelRatio = () => {
+    this.app.renderer.resolution = this.pixelRatio()
+    this.app.resize()
+    this.watchPixelRatio()
   }
 
   start() {
@@ -118,7 +165,7 @@ export class AnimationEngine {
       item.clipSeconds !== undefined
         ? item.clipSeconds + videoConfig.fadeTail
         : this.displayTime * (0.8 + Math.random() * 0.4)
-    const entity = new ImageEntity(item, this.app.screen, lifetime)
+    const entity = new ImageEntity(item, this.app.screen, lifetime, this.sizeScale)
     this.layer.addChild(entity.sprite)
     this.entities.push(entity)
   }

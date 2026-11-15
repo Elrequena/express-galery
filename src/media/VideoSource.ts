@@ -29,8 +29,9 @@ function waitFor(video: HTMLVideoElement, ok: string): Promise<void> {
       err ? reject(err) : resolve()
     }
     const onOk = () => done()
-    const onErr = () => done(new Error('video error'))
-    const timer = setTimeout(() => done(new Error('timeout')), videoConfig.loadTimeoutMs)
+    // A real media error is fatal for that file; a timeout may only mean a slow disk.
+    const onErr = () => done(Object.assign(new Error(`video error (${video.error?.code ?? '?'})`), { fatal: true }))
+    const timer = setTimeout(() => done(new Error(`timeout waiting for ${ok}`)), videoConfig.loadTimeoutMs)
     video.addEventListener(ok, onOk)
     video.addEventListener('error', onErr)
   })
@@ -51,6 +52,7 @@ interface Opened {
 export class VideoSource {
   private files: File[] = []
   private bad = new Set<File>()
+  private failures = new Map<File, number>()
   private inUse = new Map<File, number[]>() // file -> start times of its active clips
   private recent = new Map<File, number[]>() // file -> recent frame times
   private slots = 0
@@ -81,6 +83,16 @@ export class VideoSource {
     const present = new Set(this.files)
     this.bad = new Set([...this.bad].filter((f) => present.has(f)))
     this.recent.clear()
+  }
+
+  /** Fatal errors blacklist a file at once; slow loads only after repeated failures. */
+  private fail(file: File, err: unknown) {
+    const fatal = (err as { fatal?: boolean })?.fatal === true
+    const n = (this.failures.get(file) ?? 0) + 1
+    this.failures.set(file, n)
+    const dropped = fatal || n >= videoConfig.maxFailures
+    if (dropped) this.bad.add(file)
+    console.warn(`[video] ${file.name}: ${(err as Error)?.message ?? err}${dropped ? ' (descartado)' : ` (intento ${n})`}`)
   }
 
   /** Picks the least-used usable file, so one is repeated only when all are already playing. */
@@ -198,8 +210,8 @@ export class VideoSource {
         },
         release: dispose,
       }
-    } catch {
-      if (gen === this.generation) this.bad.add(file)
+    } catch (e) {
+      if (gen === this.generation) this.fail(file, e)
       dispose()
       return null
     }
@@ -247,8 +259,8 @@ export class VideoSource {
           canvas.width = canvas.height = 0
         },
       }
-    } catch {
-      if (gen === this.generation) this.bad.add(file)
+    } catch (e) {
+      if (gen === this.generation) this.fail(file, e)
       return null
     } finally {
       opened?.close() // the video element only lives for the extraction

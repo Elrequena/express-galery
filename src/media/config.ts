@@ -18,11 +18,23 @@ export const videoConfig = {
   /** Lado máximo (px) de los frames extraídos. */
   frameMaxSide: 1600,
   /** Tiempo máximo de espera para metadatos / seek / buffer. */
-  loadTimeoutMs: 10000,
+  loadTimeoutMs: 20000,
+  /** Cargas lentas fallidas antes de descartar un archivo (un error real lo descarta de inmediato). */
+  maxFailures: 3,
 }
 
 export const densityConfig = {
   min: 5,
   max: 50,
   default: 10,
+}
+
+/** Tamaño de los elementos: lado mayor = azar entre min y max, por la fracción del lado menor de la ventana. */
+export const sizeConfig = {
+  min: 0.28,
+  max: 0.6,
+  /** Multiplicador de cada nivel del selector (5 niveles; el del medio es el valor por defecto). */
+  scales: [0.55, 0.75, 1, 1.3, 1.6],
+  /** Índice (desde 0) del nivel inicial: el medio. */
+  default: 2,
 }

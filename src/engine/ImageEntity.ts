@@ -1,4 +1,5 @@
 import { Sprite } from 'pixijs'
+import { sizeConfig } from '../media/config.ts'
 import type { MediaItem } from '../media/types.ts'
 
 export interface Bounds {
@@ -22,11 +23,11 @@ export class ImageEntity {
   private item: MediaItem
   private lifetime: number // seconds
 
-  constructor(item: MediaItem, bounds: Bounds, lifetime: number) {
+  constructor(item: MediaItem, bounds: Bounds, lifetime: number, sizeScale = 1) {
     this.item = item
     this.lifetime = lifetime
     const tex = item.texture
-    const side = rand(0.18, 0.5) * Math.min(bounds.width, bounds.height)
+    const side = rand(sizeConfig.min, sizeConfig.max) * sizeScale * Math.min(bounds.width, bounds.height)
     const scale = side / Math.max(tex.width, tex.height)
 
     this.sprite = new Sprite(tex)

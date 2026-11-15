@@ -1,5 +1,5 @@
 import { AnimationEngine } from '../engine/AnimationEngine.ts'
-import { densityConfig } from '../media/config.ts'
+import { densityConfig, sizeConfig } from '../media/config.ts'
 import { BackgroundAudio } from '../media/BackgroundAudio.ts'
 import { FolderList } from '../media/FolderList.ts'
 import { MediaLibrary } from '../media/MediaLibrary.ts'
@@ -29,6 +29,7 @@ export class AppUI {
   private info = el('span', { class: 'info' })
   private slider = el('input', { type: 'range', min: '2', max: '30', step: '1', value: '10' }) as HTMLInputElement
   private secs = el('span', { class: 'secs' }, '10 s')
+  private sizeSlider = el('input', { type: 'range', min: '1', max: String(sizeConfig.scales.length), step: '1', value: String(sizeConfig.default + 1), 'aria-label': 'Tamaño' }) as HTMLInputElement
   private count = el('input', { type: 'number', min: String(densityConfig.min), max: String(densityConfig.max), step: '1', value: String(densityConfig.default) }) as HTMLInputElement
   private play = el('button', { class: 'btn primary' }, 'Iniciar') as HTMLButtonElement
   private stop = el('button', { class: 'btn' }, 'Detener') as HTMLButtonElement
@@ -62,6 +63,7 @@ export class AppUI {
       el('h2', { class: 'spaced' }, 'Visualización'),
       el('div', { class: 'row' }, el('label', {}, 'Tiempo'), el('span', { class: 'row-ctrl' }, this.slider, this.secs)),
       el('div', { class: 'row' }, el('label', {}, 'Densidad'), dens),
+      el('div', { class: 'row' }, el('label', {}, 'Tamaño'), this.sizeSlider),
       el('h2', { class: 'spaced' }, 'Sonido'),
       el('div', { class: 'row' }, this.audioName, this.audioClear),
       el('div', { class: 'row' }, el('label', {}, 'Desde carpetas'), this.videoSelect),
@@ -147,6 +149,9 @@ export class AppUI {
       const v = Math.min(densityConfig.max, Math.max(densityConfig.min, Math.round(n) || densityConfig.default))
       this.count.value = String(v)
       this.engine.density = v
+    }
+    this.sizeSlider.oninput = () => {
+      this.engine.sizeScale = sizeConfig.scales[Number(this.sizeSlider.value) - 1]
     }
     this.count.onchange = () => setCount(Number(this.count.value))
     minus.onclick = () => setCount(Number(this.count.value) - 1)
