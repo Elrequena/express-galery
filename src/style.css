@@ -97,3 +97,20 @@ body.light-bg .empty { color: #4a4a55; }
 .folders .btn.icon { padding: 2px 8px; }
 .panel .note { margin: 8px 0 0; font-size: 12px; color: #ffb4a8; }
 .panel .note:empty { display: none; }
+
+select {
+  font: inherit; color: inherit; max-width: 170px; padding: 6px 30px 6px 14px;
+  appearance: none; -webkit-appearance: none; cursor: pointer;
+  background: rgba(255, 255, 255, 0.08) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' fill='none' stroke='%23d8d8de' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M1 1l4 4 4-4'/%3E%3C/svg%3E") no-repeat right 12px center;
+  border: 0; border-radius: 999px;
+}
+select:disabled { opacity: 0.4; cursor: default; }
+select option { background: #1b1b22; color: #e8e8ee; }
+.panel { max-height: calc(100vh - 120px); overflow-y: auto; }
+
+/* Barras de desplazamiento oscuras, a juego con la interfaz. */
+.panel, .folders { scrollbar-width: thin; scrollbar-color: rgba(255, 255, 255, 0.22) transparent; }
+.panel::-webkit-scrollbar, .folders::-webkit-scrollbar { width: 8px; }
+.panel::-webkit-scrollbar-track, .folders::-webkit-scrollbar-track { background: transparent; }
+.panel::-webkit-scrollbar-thumb, .folders::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.22); border-radius: 999px; }
+.panel::-webkit-scrollbar-thumb:hover, .folders::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.35); }

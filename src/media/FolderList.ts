@@ -43,6 +43,11 @@ export class FolderList {
     this.items = this.items.filter((f) => f.id !== id)
   }
 
+  /** Video files of all folders (candidates for background audio). */
+  videoFiles(): File[] {
+    return this.allFiles().filter(isSupportedVideo)
+  }
+
   /**
    * All files of all folders. A folder nested inside another selected folder would
    * list its files twice, so files are de-duplicated by name, size and date.

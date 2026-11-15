@@ -1,5 +1,6 @@
 import { AnimationEngine } from '../engine/AnimationEngine.ts'
 import { densityConfig } from '../media/config.ts'
+import { BackgroundAudio } from '../media/BackgroundAudio.ts'
 import { FolderList } from '../media/FolderList.ts'
 import { MediaLibrary } from '../media/MediaLibrary.ts'
 
@@ -10,6 +11,13 @@ type State = 'idle' | 'playing' | 'paused'
 export class AppUI {
   private source = new MediaLibrary()
   private folders = new FolderList()
+  private audio = new BackgroundAudio()
+  private audioInput = el('input', { type: 'file', accept: 'audio/*,video/mp4,video/webm,video/quicktime,.mp3,.m4a,.ogg,.wav,.flac,.mp4,.webm,.mov', hidden: '' }) as HTMLInputElement
+  private videoSelect = el('select', { 'aria-label': 'Audio de un video de las carpetas' }) as HTMLSelectElement
+  private audioName = el('span', { class: 'fname' }, 'Sin audio')
+  private audioClear = el('button', { class: 'btn', type: 'button' }, 'Quitar') as HTMLButtonElement
+  private audioNote = el('p', { class: 'note' })
+  private videoFiles: File[] = []
   private folderList = el('ul', { class: 'folders' })
   private folderNote = el('p', { class: 'note' })
   private engine: AnimationEngine
@@ -43,6 +51,8 @@ export class AppUI {
     // Panel de ajustes (por ahora solo Apariencia); crecerá con más secciones.
     const color = el('input', { type: 'color', value: DEFAULT_BG }) as HTMLInputElement
     const reset = el('button', { class: 'btn', type: 'button' }, 'Restablecer')
+    const pickAudio = el('button', { class: 'btn', type: 'button' }, 'Elegir')
+    const vol = el('input', { type: 'range', min: '0', max: '100', step: '1', value: '50', 'aria-label': 'Volumen' }) as HTMLInputElement
     const panel = el(
       'div',
       { class: 'panel', hidden: '' },
@@ -52,6 +62,12 @@ export class AppUI {
       el('h2', { class: 'spaced' }, 'Visualización'),
       el('div', { class: 'row' }, el('label', {}, 'Tiempo'), el('span', { class: 'row-ctrl' }, this.slider, this.secs)),
       el('div', { class: 'row' }, el('label', {}, 'Densidad'), dens),
+      el('h2', { class: 'spaced' }, 'Sonido'),
+      el('div', { class: 'row' }, this.audioName, this.audioClear),
+      el('div', { class: 'row' }, el('label', {}, 'Desde carpetas'), this.videoSelect),
+      el('div', { class: 'row' }, el('label', {}, 'Desde el equipo'), pickAudio),
+      el('div', { class: 'row' }, el('label', {}, 'Volumen'), vol),
+      this.audioNote,
       el('h2', { class: 'spaced' }, 'Apariencia'),
       el('div', { class: 'row' }, el('label', {}, 'Color de fondo'), el('span', { class: 'row-ctrl' }, color, reset)),
     )
@@ -77,7 +93,30 @@ export class AppUI {
     window.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') setPanel(false)
     })
-    root.append(stage, this.empty, dock, this.input)
+    root.append(stage, this.empty, dock, this.input, this.audioInput)
+
+    const useAudio = async (file: File) => {
+      this.audioNote.textContent = ''
+      const ok = await this.audio.setFile(file)
+      if (!ok) this.audioNote.textContent = 'No se pudo reproducir ese audio.'
+      this.render()
+    }
+    pickAudio.onclick = () => this.audioInput.click()
+    this.audioInput.onchange = () => {
+      const f = this.audioInput.files?.[0]
+      this.audioInput.value = ''
+      if (f) void useAudio(f)
+    }
+    this.videoSelect.onchange = () => {
+      const f = this.videoFiles[Number(this.videoSelect.value)]
+      if (f) void useAudio(f)
+    }
+    this.audioClear.onclick = () => {
+      this.audio.clear()
+      this.audioNote.textContent = ''
+      this.render()
+    }
+    vol.oninput = () => this.audio.setVolume(Number(vol.value) / 100)
 
     pin.onchange = () => dock.classList.toggle('pinned', pin.checked)
     let hideTimer = 0
@@ -190,6 +229,22 @@ export class AppUI {
     this.empty.replaceChildren(el('div', {}, el('h1', {}, 'Express Galery'), el('p', {}, msg)))
     this.empty.style.display = msg ? '' : 'none'
     this.renderFolders()
+    this.renderAudio()
+    this.audio.sync(this.state)
+  }
+
+  private renderAudio() {
+    const f = this.audio.file
+    this.audioName.textContent = f ? f.name : 'Sin audio'
+    this.audioName.title = f ? f.name : ''
+    this.audioClear.style.visibility = f ? '' : 'hidden'
+    this.videoFiles = this.folders.videoFiles()
+    const opts = [el('option', { value: '' }, 'Elegir')]
+    this.videoFiles.forEach((v, i) => opts.push(el('option', { value: String(i) }, v.name)))
+    this.videoSelect.replaceChildren(...opts)
+    const cur = f ? this.videoFiles.indexOf(f) : -1
+    this.videoSelect.value = cur >= 0 ? String(cur) : ''
+    this.videoSelect.disabled = this.videoFiles.length === 0
   }
 
   private renderFolders() {
