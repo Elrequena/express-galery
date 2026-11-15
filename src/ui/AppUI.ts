@@ -2,6 +2,8 @@ import { AnimationEngine } from '../engine/AnimationEngine.ts'
 import { densityConfig } from '../media/config.ts'
 import { MediaLibrary } from '../media/MediaLibrary.ts'
 
+const DEFAULT_BG = '#0b0b0e'
+
 type State = 'idle' | 'playing' | 'paused'
 
 export class AppUI {
@@ -33,8 +35,39 @@ export class AppUI {
     const dens = el('div', { class: 'time' }, 'Cantidad', el('span', { class: 'stepper' }, minus, this.count, plus))
     const pin = el('input', { type: 'checkbox' }) as HTMLInputElement
     const fix = el('label', { class: 'switch' }, pin, el('span', { class: 'track' }), 'Fijar')
-    bar.append(this.pick, this.info, time, dens, this.play, this.stop, fix)
-    const dock = (this.dock = el('div', { class: 'dock' }, bar))
+    const gear = el('button', { class: 'btn icon', type: 'button', 'aria-label': 'Ajustes', title: 'Ajustes' }, '⚙︎')
+    bar.append(this.pick, this.info, time, dens, this.play, this.stop, fix, gear)
+
+    // Panel de ajustes (por ahora solo Apariencia); crecerá con más secciones.
+    const color = el('input', { type: 'color', value: DEFAULT_BG }) as HTMLInputElement
+    const reset = el('button', { class: 'btn', type: 'button' }, 'Restablecer')
+    const panel = el(
+      'div',
+      { class: 'panel', hidden: '' },
+      el('h2', {}, 'Apariencia'),
+      el('div', { class: 'row' }, el('label', {}, 'Color de fondo'), el('span', { class: 'row-ctrl' }, color, reset)),
+    )
+    const applyBg = (c: string) => {
+      document.body.style.background = c
+      document.body.classList.toggle('light-bg', isLight(c))
+      color.value = c
+    }
+    color.oninput = () => applyBg(color.value)
+    reset.onclick = () => applyBg(DEFAULT_BG)
+
+    const dock = (this.dock = el('div', { class: 'dock' }, el('div', { class: 'dock-inner' }, panel, bar)))
+    const setPanel = (open: boolean) => {
+      panel.hidden = !open
+      dock.classList.toggle('open', open)
+    }
+    gear.onclick = () => setPanel(!!panel.hidden)
+    document.addEventListener('pointerdown', (e) => {
+      const t = e.target as Node
+      if (!panel.hidden && !panel.contains(t) && !gear.contains(t)) setPanel(false)
+    })
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') setPanel(false)
+    })
     root.append(stage, this.empty, dock, this.input)
 
     pin.onchange = () => dock.classList.toggle('pinned', pin.checked)
@@ -113,6 +146,13 @@ export class AppUI {
     this.empty.replaceChildren(el('div', {}, el('h1', {}, 'Express Galery'), el('p', {}, msg)))
     this.empty.style.display = msg ? '' : 'none'
   }
+}
+
+/** True when dark text reads better than light text on this hex color (WCAG luminance). */
+function isLight(hex: string): boolean {
+  const lin = (v: number) => (v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4)
+  const [r, g, b] = [1, 3, 5].map((i) => lin(parseInt(hex.slice(i, i + 2), 16) / 255))
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b > 0.179
 }
 
 function el(tag: string, attrs: Record<string, string> = {}, ...children: (string | Node)[]) {

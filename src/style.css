@@ -17,7 +17,7 @@ body {
   padding: 70px 12px 20px;
   opacity: 0; transition: opacity 0.4s;
 }
-.dock:hover, .dock:has(:focus-visible),.dock.pinned, .dock.shown, .dock.always { opacity: 1; }
+.dock:hover, .dock:has(:focus-visible),.dock.pinned, .dock.shown, .dock.always, .dock.open { opacity: 1; }
 .empty h1 { margin: 0 0 8px; font-size: 28px; font-weight: 600; letter-spacing: 0.02em; color: #e8e8ee; }
 .empty p { margin: 0; }
 .bar {
@@ -65,3 +65,25 @@ input[type='number']::-webkit-outer-spin-button { -webkit-appearance: none; marg
   width: 28px; height: 28px; border: 0; border-radius: 50%; background: none;
 }
 .step:hover { background: rgba(255, 255, 255, 0.16); }
+
+.dock-inner { position: relative; max-width: 100%; }
+.btn.icon { padding: 6px 10px; font-size: 16px; line-height: 1; }
+.panel {
+  position: absolute; right: 0; bottom: calc(100% + 10px); width: 320px; max-width: calc(100vw - 24px);
+  padding: 14px 16px; border-radius: 16px;
+  background: rgba(20, 20, 26, 0.85); backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+.panel[hidden] { display: none; }
+.panel h2 { margin: 0 0 10px; font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #8a8a96; }
+.row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.row-ctrl { display: flex; align-items: center; gap: 8px; }
+input[type='color'] {
+  width: 32px; height: 28px; padding: 0; border: 0; border-radius: 8px; background: none; cursor: pointer;
+}
+input[type='color']::-webkit-color-swatch-wrapper { padding: 0; }
+input[type='color']::-webkit-color-swatch { border: 1px solid rgba(255, 255, 255, 0.25); border-radius: 8px; }
+
+/* Textos sobre el escenario cuando el fondo elegido es claro. */
+body.light-bg .empty h1 { color: #15151b; }
+body.light-bg .empty { color: #4a4a55; }
