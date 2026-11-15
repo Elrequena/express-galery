@@ -9,7 +9,7 @@ Generador visual de composiciones dinámicas a partir de las imágenes y videos 
 - Selecciona una carpeta del equipo y mezcla sus imágenes (JPG, JPEG, PNG, WEBP, GIF) y videos (MP4, WEBM, MOV) en un escenario de PixiJS.
 - Cada elemento tiene su propio tamaño, posición, dirección, velocidad, transiciones de opacidad y ciclo de vida.
 - Los videos se reproducen como **fragmentos aleatorios** (5–12 s) desde puntos distintos del archivo, nunca completos.
-- Controles discretos: tiempo de visualización, cantidad simultánea (5–50), iniciar / pausar / detener y cambio de carpeta sin recargar. La barra se oculta y aparece con el mouse, o con `Space`, `Enter` o `Esc`; el switch «Fijar» la mantiene visible.
+- Controles discretos: añadir carpetas (una a una, con lista para quitarlas), iniciar / pausar / detener, y en los ajustes tiempo por imagen, cantidad simultánea (5–50) y color de fondo. `Space` inicia, pausa y reanuda. La barra se oculta y aparece con el mouse, o con `Space`, `Enter` o `Esc`; el switch «Fijar» la mantiene visible.
 
 ## Cómo se completa el escenario
 

@@ -20,10 +20,8 @@ export class MediaLibrary implements MediaProvider {
     return this.images.count + this.videos.count
   }
 
-  setFiles(list: FileList | null) {
-    const files = Array.from(list ?? [])
-    this.generation++
-    this.live = { image: 0, frame: 0 }
+  /** Replaces the collection. Items already on stage keep playing and release themselves. */
+  setFiles(files: File[]) {
     this.images.setFiles(files)
     this.videos.setFiles(files)
   }

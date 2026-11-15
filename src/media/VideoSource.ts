@@ -75,13 +75,12 @@ export class VideoSource {
     return this.hasUsable && this.slots < videoConfig.maxConcurrent + videoConfig.overlapSlots
   }
 
+  /** Replaces the video list. Clips already playing keep their slots until they end. */
   setFiles(list: File[]) {
-    this.generation++ // in-flight work becomes stale and cleans itself up
-    this.slots = 0
-    this.inUse.clear()
-    this.recent.clear()
-    this.bad.clear()
     this.files = list.filter(isSupportedVideo)
+    const present = new Set(this.files)
+    this.bad = new Set([...this.bad].filter((f) => present.has(f)))
+    this.recent.clear()
   }
 
   /** Picks the least-used usable file, so one is repeated only when all are already playing. */

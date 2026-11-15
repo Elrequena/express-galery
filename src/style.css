@@ -49,7 +49,7 @@ body {
 .btn:disabled { opacity: 0.4; cursor: default; }
 .info { color: #8a8a96; min-width: 4em; }
 .time { display: flex; align-items: center; gap: 8px; }
-.secs { min-width: 3em; font-variant-numeric: tabular-nums; }
+.secs { min-width: 1.9em; text-align: right; font-variant-numeric: tabular-nums; }
 input[type='range'] { width: 120px; accent-color: #e8e8ee; }
 input[type='number'] {
   width: 36px; font: inherit; color: inherit; text-align: center;
@@ -76,8 +76,8 @@ input[type='number']::-webkit-outer-spin-button { -webkit-appearance: none; marg
 }
 .panel[hidden] { display: none; }
 .panel h2 { margin: 0 0 10px; font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #8a8a96; }
-.row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-.row-ctrl { display: flex; align-items: center; gap: 8px; }
+.row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 0; }
+.row-ctrl { display: flex; align-items: center; gap: 6px; }
 input[type='color'] {
   width: 32px; height: 28px; padding: 0; border: 0; border-radius: 8px; background: none; cursor: pointer;
 }
@@ -87,3 +87,13 @@ input[type='color']::-webkit-color-swatch { border: 1px solid rgba(255, 255, 255
 /* Textos sobre el escenario cuando el fondo elegido es claro. */
 body.light-bg .empty h1 { color: #15151b; }
 body.light-bg .empty { color: #4a4a55; }
+
+.panel h2.spaced { margin-top: 16px; }
+.folders { list-style: none; margin: 0; padding: 0; max-height: 160px; overflow-y: auto; }
+.folders li { display: flex; align-items: center; gap: 8px; padding: 4px 0; }
+.folders .none { color: #6c6c78; }
+.fname { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fmeta { color: #8a8a96; font-size: 12px; white-space: nowrap; }
+.folders .btn.icon { padding: 2px 8px; }
+.panel .note { margin: 8px 0 0; font-size: 12px; color: #ffb4a8; }
+.panel .note:empty { display: none; }
