@@ -1,5 +1,6 @@
 import { Application, Container } from 'pixijs'
 import type { MediaProvider } from '../media/types.ts'
+import { densityConfig, videoConfig } from '../media/config.ts'
 import { ImageEntity } from './ImageEntity.ts'
 
 const RETIRE_BOOST = 3 // lifecycle speed-up for surplus images
@@ -15,8 +16,8 @@ export class AnimationEngine {
   private run = 0 // invalidates in-flight spawns on stop
 
   displayTime = 8 // seconds
-  density = 8 // desired simultaneous images
-  private effective = 8 // density smoothed over time
+  density: number = densityConfig.default // desired simultaneous elements (min densityConfig.min)
+  private effective: number = densityConfig.default // density smoothed over time
   private boost = 1
 
   private media: MediaProvider
@@ -38,17 +39,20 @@ export class AnimationEngine {
     if (this.running) return
     this.running = true
     this.paused = false
-    this.effective = this.density
+    this.effective = this.target
     this.boost = 1
     this.spawnTimer = 0 // spawn the first one immediately
   }
 
   pause() {
-    if (this.running) this.paused = true
+    if (!this.running) return
+    this.paused = true
+    for (const e of this.entities) e.setPaused(true)
   }
 
   resume() {
     this.paused = false
+    for (const e of this.entities) e.setPaused(false)
   }
 
   stop() {
@@ -65,7 +69,7 @@ export class AnimationEngine {
     dt = Math.min(dt, 0.1)
 
     // Ease the effective density towards the requested one (~2 s time constant).
-    this.effective += (this.density - this.effective) * (1 - Math.exp(-dt / 2))
+    this.effective += (this.target - this.effective) * (1 - Math.exp(-dt / 2))
     // Surplus images (oldest first) fade out faster, with a smoothed ramp.
     const surplus = this.entities.length - this.effective
     const boostGoal = surplus > 0.5 ? RETIRE_BOOST : 1
@@ -80,24 +84,40 @@ export class AnimationEngine {
     }
 
     this.spawnTimer -= dt
-    const target = Math.max(1, Math.round(this.effective))
-    if (this.spawnTimer <= 0 && this.entities.length + this.pending < target) {
+    const target = Math.max(densityConfig.min, Math.round(this.effective))
+    // Clips about to fade out free their slot early so the replacement can load in time.
+    const endingClips = this.entities.filter((e) => e.kind === 'clip' && e.remaining < videoConfig.endingLead).length
+    if (this.spawnTimer <= 0 && this.entities.length - endingClips + this.pending < target) {
       this.spawnTimer = (this.displayTime / target) * (0.6 + Math.random() * 0.8)
-      void this.spawn()
+      void this.spawn(target, endingClips)
     }
   }
 
-  private async spawn() {
+  private get target() {
+    return Math.max(densityConfig.min, this.density)
+  }
+
+  private async spawn(target: number, endingClips: number) {
     const run = this.run
     this.pending++
-    const item = await this.media.next()
+    let item = await this.media.next({ target, endingClips })
+    // Dynamic media (video) must be playing before it enters the stage.
+    if (item?.start && !(await item.start())) {
+      item.release()
+      item = null
+    }
     if (run !== this.run) {
       item?.release()
       return
     }
     this.pending--
     if (!item) return
-    const lifetime = this.displayTime * (0.8 + Math.random() * 0.4)
+    if (this.paused) item.setPaused?.(true)
+    // A clip's own length drives its lifecycle; images use the display time.
+    const lifetime =
+      item.clipSeconds !== undefined
+        ? item.clipSeconds + videoConfig.fadeTail
+        : this.displayTime * (0.8 + Math.random() * 0.4)
     const entity = new ImageEntity(item, this.app.screen, lifetime)
     this.layer.addChild(entity.sprite)
     this.entities.push(entity)

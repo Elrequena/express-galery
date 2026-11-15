@@ -72,6 +72,7 @@ export class ImageSource implements MediaProvider {
       }
       const texture = Texture.from(source)
       const item: MediaItem = {
+        kind: 'image',
         texture,
         release: () => {
           texture.destroy(true) // also destroys the BaseTexture

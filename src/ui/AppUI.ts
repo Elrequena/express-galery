@@ -1,10 +1,11 @@
 import { AnimationEngine } from '../engine/AnimationEngine.ts'
-import { ImageSource } from '../media/ImageSource.ts'
+import { densityConfig } from '../media/config.ts'
+import { MediaLibrary } from '../media/MediaLibrary.ts'
 
 type State = 'idle' | 'playing' | 'paused'
 
 export class AppUI {
-  private source = new ImageSource()
+  private source = new MediaLibrary()
   private engine: AnimationEngine
   private state: State = 'idle'
   private searched = false
@@ -15,7 +16,7 @@ export class AppUI {
   private info = el('span', { class: 'info' })
   private slider = el('input', { type: 'range', min: '2', max: '30', step: '1', value: '8' }) as HTMLInputElement
   private secs = el('span', { class: 'secs' }, '8 s')
-  private count = el('input', { type: 'number', min: '1', max: '40', step: '1', value: '8' }) as HTMLInputElement
+  private count = el('input', { type: 'number', min: String(densityConfig.min), max: String(densityConfig.max), step: '1', value: String(densityConfig.default) }) as HTMLInputElement
   private play = el('button', { class: 'btn primary' }, 'Iniciar') as HTMLButtonElement
   private stop = el('button', { class: 'btn' }, 'Detener') as HTMLButtonElement
   private empty = el('div', { class: 'empty' })
@@ -53,7 +54,7 @@ export class AppUI {
       this.secs.textContent = `${this.slider.value} s`
     }
     const setCount = (n: number) => {
-      const v = Math.min(40, Math.max(1, Math.round(n) || 8))
+      const v = Math.min(densityConfig.max, Math.max(densityConfig.min, Math.round(n) || densityConfig.default))
       this.count.value = String(v)
       this.engine.density = v
     }
@@ -72,7 +73,7 @@ export class AppUI {
   private onFolder() {
     this.engine.stop()
     this.state = 'idle'
-    this.source.setFiles(this.input.files ?? [])
+    this.source.setFiles(this.input.files)
     this.searched = true
     this.input.value = '' // allows re-selecting the same folder
     this.render()
@@ -96,14 +97,18 @@ export class AppUI {
   private render() {
     const n = this.source.count
     this.dock.classList.toggle('always', !this.started)
-    this.info.textContent = this.searched ? `${n} ${n === 1 ? 'imagen' : 'imágenes'}` : ''
+    const i = this.source.images.count
+    const v = this.source.videos.count
+    this.info.textContent = this.searched
+      ? `${i} ${i === 1 ? 'imagen' : 'imágenes'}` + (v ? ` · ${v} ${v === 1 ? 'video' : 'videos'}` : '')
+      : ''
     this.play.textContent = { idle: 'Iniciar', playing: 'Pausar', paused: 'Reanudar' }[this.state]
     this.play.disabled = n === 0
     this.stop.disabled = this.state === 'idle'
 
     let msg = ''
-    if (!this.searched) msg = 'Elige una carpeta con imágenes (JPG, PNG, WEBP o GIF) para empezar.'
-    else if (n === 0) msg = 'No se encontraron imágenes compatibles en esa carpeta.'
+    if (!this.searched) msg = 'Elige una carpeta con imágenes (JPG, PNG, WEBP, GIF) o videos (MP4, WEBM, MOV) para empezar.'
+    else if (n === 0) msg = 'No se encontraron imágenes ni videos compatibles en esa carpeta.'
     else if (this.state === 'idle') msg = 'Pulsa «Iniciar» para crear la composición.'
     this.empty.textContent = msg
     this.empty.style.display = msg ? '' : 'none'

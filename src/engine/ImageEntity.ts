@@ -54,6 +54,19 @@ export class ImageEntity {
     return left > 0
   }
 
+  get kind() {
+    return this.item.kind
+  }
+
+  /** Seconds of life left. */
+  get remaining() {
+    return this.lifetime - this.age
+  }
+
+  setPaused(paused: boolean) {
+    this.item.setPaused?.(paused)
+  }
+
   destroy() {
     this.sprite.destroy() // texture is released by the media item
     this.item.release()
