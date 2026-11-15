@@ -43,6 +43,11 @@ export class FolderList {
     this.items = this.items.filter((f) => f.id !== id)
   }
 
+  /** Image files of all folders (candidates for the background picture). */
+  imageFiles(): File[] {
+    return this.allFiles().filter(isSupportedImage)
+  }
+
   /** Video files of all folders (candidates for background audio). */
   videoFiles(): File[] {
     return this.allFiles().filter(isSupportedVideo)

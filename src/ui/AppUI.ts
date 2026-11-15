@@ -1,5 +1,6 @@
 import { AnimationEngine } from '../engine/AnimationEngine.ts'
 import { densityConfig, sizeConfig } from '../media/config.ts'
+import { BackgroundImage } from './BackgroundImage.ts'
 import { BackgroundAudio } from '../media/BackgroundAudio.ts'
 import { FolderList } from '../media/FolderList.ts'
 import { MediaLibrary } from '../media/MediaLibrary.ts'
@@ -12,6 +13,15 @@ export class AppUI {
   private source = new MediaLibrary()
   private folders = new FolderList()
   private audio = new BackgroundAudio()
+  private bg = new BackgroundImage()
+  private bgInput = el('input', { type: 'file', accept: 'image/*,.jpg,.jpeg,.png,.webp,.gif', hidden: '' }) as HTMLInputElement
+  private bgSelect = el('select', { 'aria-label': 'Imagen de fondo de las carpetas' }) as HTMLSelectElement
+  private bgName = el('span', { class: 'fname' }, 'Sin imagen')
+  private bgClear = el('button', { class: 'btn', type: 'button' }, 'Quitar') as HTMLButtonElement
+  private bgNote = el('p', { class: 'note' })
+  private bgFitHeight = el('button', { class: 'btn on', type: 'button' }, 'Alto') as HTMLButtonElement
+  private bgFitWidth = el('button', { class: 'btn', type: 'button' }, 'Ancho') as HTMLButtonElement
+  private imageFiles: File[] = []
   private audioInput = el('input', { type: 'file', accept: 'audio/*,video/mp4,video/webm,video/quicktime,.mp3,.m4a,.ogg,.wav,.flac,.mp4,.webm,.mov', hidden: '' }) as HTMLInputElement
   private videoSelect = el('select', { 'aria-label': 'Audio de un video de las carpetas' }) as HTMLSelectElement
   private audioName = el('span', { class: 'fname' }, 'Sin audio')
@@ -52,6 +62,7 @@ export class AppUI {
     // Panel de ajustes (por ahora solo Apariencia); crecerá con más secciones.
     const color = el('input', { type: 'color', value: DEFAULT_BG }) as HTMLInputElement
     const reset = el('button', { class: 'btn', type: 'button' }, 'Restablecer')
+    const pickBg = el('button', { class: 'btn', type: 'button' }, 'Elegir')
     const pickAudio = el('button', { class: 'btn', type: 'button' }, 'Elegir')
     const vol = el('input', { type: 'range', min: '0', max: '100', step: '1', value: '50', 'aria-label': 'Volumen' }) as HTMLInputElement
     const panel = el(
@@ -72,9 +83,14 @@ export class AppUI {
       this.audioNote,
       el('h2', { class: 'spaced' }, 'Apariencia'),
       el('div', { class: 'row' }, el('label', {}, 'Color de fondo'), el('span', { class: 'row-ctrl' }, color, reset)),
+      el('div', { class: 'row' }, this.bgName, this.bgClear),
+      el('div', { class: 'row' }, el('label', {}, 'Imagen de carpetas'), this.bgSelect),
+      el('div', { class: 'row' }, el('label', {}, 'Imagen del equipo'), pickBg),
+      el('div', { class: 'row' }, el('label', {}, 'Ajustar a'), el('span', { class: 'row-ctrl' }, this.bgFitHeight, this.bgFitWidth)),
+      this.bgNote,
     )
     const applyBg = (c: string) => {
-      document.body.style.background = c
+      document.body.style.backgroundColor = c
       document.body.classList.toggle('light-bg', isLight(c))
       color.value = c
     }
@@ -95,7 +111,7 @@ export class AppUI {
     window.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') setPanel(false)
     })
-    root.append(stage, this.empty, dock, this.input, this.audioInput)
+    root.append(stage, this.empty, dock, this.input, this.audioInput, this.bgInput)
 
     const useAudio = async (file: File) => {
       this.audioNote.textContent = ''
@@ -103,6 +119,33 @@ export class AppUI {
       if (!ok) this.audioNote.textContent = 'No se pudo reproducir ese audio.'
       this.render()
     }
+    const useBg = async (file: File) => {
+      this.bgNote.textContent = ''
+      if (!(await this.bg.setFile(file))) this.bgNote.textContent = 'No se pudo cargar esa imagen.'
+      this.renderBg()
+    }
+    pickBg.onclick = () => this.bgInput.click()
+    this.bgInput.onchange = () => {
+      const f = this.bgInput.files?.[0]
+      this.bgInput.value = ''
+      if (f) void useBg(f)
+    }
+    this.bgSelect.onchange = () => {
+      const f = this.imageFiles[Number(this.bgSelect.value)]
+      if (f) void useBg(f)
+    }
+    this.bgClear.onclick = () => {
+      this.bg.clear()
+      this.bgNote.textContent = ''
+      this.renderBg()
+    }
+    const setFit = (fit: 'height' | 'width') => {
+      this.bg.setFit(fit)
+      this.bgFitHeight.classList.toggle('on', fit === 'height')
+      this.bgFitWidth.classList.toggle('on', fit === 'width')
+    }
+    this.bgFitHeight.onclick = () => setFit('height')
+    this.bgFitWidth.onclick = () => setFit('width')
     pickAudio.onclick = () => this.audioInput.click()
     this.audioInput.onchange = () => {
       const f = this.audioInput.files?.[0]
@@ -235,7 +278,22 @@ export class AppUI {
     this.empty.style.display = msg ? '' : 'none'
     this.renderFolders()
     this.renderAudio()
+    this.renderBg()
     this.audio.sync(this.state)
+  }
+
+  private renderBg() {
+    const f = this.bg.file
+    this.bgName.textContent = f ? `Fondo: ${f.name}` : 'Sin imagen de fondo'
+    this.bgName.title = f ? f.name : ''
+    this.bgClear.style.visibility = f ? '' : 'hidden'
+    this.imageFiles = this.folders.imageFiles()
+    const opts = [el('option', { value: '' }, 'Elegir')]
+    this.imageFiles.forEach((v, i) => opts.push(el('option', { value: String(i) }, v.name)))
+    this.bgSelect.replaceChildren(...opts)
+    const cur = f ? this.imageFiles.indexOf(f) : -1
+    this.bgSelect.value = cur >= 0 ? String(cur) : ''
+    this.bgSelect.disabled = this.imageFiles.length === 0
   }
 
   private renderAudio() {
